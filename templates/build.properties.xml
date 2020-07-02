@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <app>
+        <name/>
+        <url/>
+        <title/>        
+        <version/>
+    </app>
+    <trigger>
+        <provider-url>
+            <dev/>
+            <prod/>
+        </provider-url>
+        <destination>
+            <dev/>
+            <prod/>
+        </destination>
+    </trigger>
+</root>

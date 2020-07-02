@@ -1,0 +1,417 @@
+<root>
+    <triggers>
+        <trigger>
+            <provider-url>
+                <dev>failover:tcp://10.0.1.114:61616</dev>
+                <prod>failover:tcp://10.0.1.131:61616</prod>
+            </provider-url>
+            <destination>
+                <dev>dynamicTopics/hsg-replication</dev>
+                <prod>dynamicTopics/hsg-replication</prod>
+            </destination>
+        </trigger>     
+    </triggers>
+    
+    <app pre="pre-install.xql">
+        <name>administrative-timeline</name>
+        <url>http://history.state.gov/ns/data/administrative-timeline</url>
+        <title>Administrative Timeline of the Department of State (data)</title>
+        <version>0.4</version>
+        <index xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns="http://exist-db.org/collection-config/1.0">
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="tei:div"/>
+            </lucene>
+        </index>
+    </app>
+    <app>
+        <name>carousel</name>
+        <title>Carousel (data)</title>
+        <url>http://history.state.gov/ns/apps/carousel</url>
+        <version>0.8</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <range>
+                <create qname="topic">
+                    <field name="topic-id" type="xs:string" match="id"/>
+                </create>
+            </range>
+        </index>
+    </app>
+    <app>
+        <name>conferences</name>
+        <title>Conferences (data)</title>
+        <url>http://history.state.gov/ns/data/conferences</url>
+        <version>0.9</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="tei:div"/>
+            </lucene>
+        </index>
+    </app>    
+    <app>
+        <name>frus</name>
+        <url>http://history.state.gov/ns/data/frus</url>
+        <title>FRUS (data)</title>
+        <version>0.5.1</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" name="bibliography.xconf">            
+            <!-- Disable the legacy full text index -->
+            <fulltext default="none" attributes="false"/>            
+            <!-- Lucene index configuration -->
+            <lucene>
+                <!-- The standard analyzer will ignore stopwords like 'the', 'and' -->
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="@id"/>
+            </lucene>            
+            <!-- Range index configuration -->
+            <create qname="@id" type="xs:string"/>
+            <create qname="@type" type="xs:string"/>
+            <create qname="@loc" type="xs:string"/>
+            <create qname="@role" type="xs:string"/>
+            <create qname="@part" type="xs:string"/>
+            <create qname="@unit" type="xs:string"/>
+            <create qname="published-year" type="xs:integer"/>
+            <create qname="publication-status" type="xs:string"/>
+            <create qname="coverage" type="xs:integer"/>
+            <create qname="grouping" type="xs:string"/>
+            <create qname="administration" type="xs:string"/>
+            <create qname="@administration" type="xs:string"/>            
+        </index>
+        <index xmlns="http://exist-db.org/collection-config/1.0" name="code-tables.xconf">
+            <!-- Disable the legacy full text index -->
+            <fulltext default="none" attributes="false"/>            
+            <!-- Range index configuration -->
+            <create qname="value" type="xs:string"/>            
+        </index>
+        <index xmlns="http://exist-db.org/collection-config/1.0" name="volumes.xconf"  
+            xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:frus="http://history.state.gov/frus/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <!-- Disable the legacy full text index -->
+            <fulltext default="none" attributes="false"/>
+            
+            <!-- Lucene index configuration -->
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer">
+                    <!-- Specify stop words - or remove them entirely -->
+                    <param name="stopwords" type="org.apache.lucene.analysis.util.CharArraySet">
+                        <!--<value>the</value>-->
+                    </param>
+                </analyzer>
+                <text qname="tei:div"/>
+            </lucene>
+            
+            <!-- Range index configuration -->
+            <range>
+                <create match="//tei:note">
+                    <field name="note-type" match="@type" type="xs:string"/>
+                </create>
+                <create match="//tei:div">
+                    <field name="div-type" match="@type" type="xs:string"/>
+                    <field name="div-subtype" match="@subtype" type="xs:string"/>
+                    <field name="div-id" match="@xml:id" type="xs:string"/>
+                    <field name="div-date-min" match="@frus:doc-dateTime-min" type="xs:dateTime"/>
+                    <field name="div-date-max" match="@frus:doc-dateTime-max" type="xs:dateTime"/>
+                </create>
+                <create qname="@target" type="xs:string"/>
+                <create qname="@corresp" type="xs:string"/>
+                <!--create qname="@type" type="xs:string"/-->
+                <create qname="@xml:id" type="xs:string"/>
+                <create qname="@id" type="xs:string"/>
+                <create qname="@rend" type="xs:string"/>
+                <create qname="@n" type="xs:string"/>
+                <create qname="tei:idno" type="xs:string"/>
+                <!-- Note on @xml:id: When using the dedicated fn:id()
+                function, eXist will use its default xml:id index,
+                so you don't need an extra index. However, if you use
+                a general comparison as in //node[@xml:id = 'abc'], then
+                an additional range index will be required -->
+                <!--create qname="@when" type="xs:date"/-->
+                <!-- Note on @when: "eXist can only use a range index
+                if all values within that index are valid instances
+                of the defined index type. So every date has to be
+                an xs:date and if there's just one exception, the
+                index will no longer be used."  Until we've normalized
+                our dates, there's no point in using this range index. -->
+            </range>
+        </index>        
+    </app>
+    <app>
+        <name>frus-history</name>
+        <url>http://history.state.gov/ns/data/frus-history</url>
+        <title>History of the Foreign Relations Series (data)</title>
+        <version>0.4</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" name="monograph.xconf">
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="tei:div"/>
+            </lucene>
+        </index>
+    </app>
+    <app>
+        <name>gsh</name>
+        <url>http://history.state.gov/ns/pkg/apps/gsh</url>
+        <title>Geospatial History of U.S. Foreign Relations</title>
+        <version>0.5.1</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <range>
+                <create qname="territory">
+                    <field name="territory-id" type="xs:string" match="id"/>
+                </create>
+            </range>
+        </index>
+    </app>
+    <app>
+        <name>hac</name>
+        <url>http://history.state.gov/ns/data/hac</url>
+        <title>Historical Advisory Committee (data)</title>
+        <version>0.4</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="tei:div"/>
+            </lucene>
+        </index>
+    </app>
+    <app>
+        <name>milestones</name>
+        <url>http://history.state.gov/ns/data/milestones</url>
+        <title>Milestones in the History of U.S. Foreign Relations (data)</title>
+        <version>0.4</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="tei:div"/>
+            </lucene>
+            <create qname="@target" type="xs:string"/>
+            <create qname="@corresp" type="xs:string"/>
+            <create qname="@type" type="xs:string"/>
+            <create qname="@xml:id" type="xs:string"/>
+            <create qname="@id" type="xs:string"/>
+            <create qname="@rend" type="xs:string"/>
+            <create qname="@n" type="xs:string"/>
+            <create qname="tei:idno" type="xs:string"/>
+        </index>
+    </app>
+    <app>
+        <name>other-publications</name>
+        <url>http://history.state.gov/ns/data/other-publications</url>
+        <title>Other Publications (data)</title>
+        <version>0.4</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="tei:div"/>
+            </lucene>
+            <create qname="@target" type="xs:string"/>
+            <create qname="@corresp" type="xs:string"/>
+            <create qname="@type" type="xs:string"/>
+            <create qname="@xml:id" type="xs:string"/>
+            <create qname="@id" type="xs:string"/>
+            <create qname="@rend" type="xs:string"/>
+            <create qname="@n" type="xs:string"/>
+            <create qname="tei:idno" type="xs:string"/>
+        </index>
+    </app>
+    <app>
+        <name>people</name>
+        <url>http://history.state.gov/ns/apps/people</url>
+        <title>People</title>
+        <version>0.4</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <analyzer id="ws" class="org.apache.lucene.analysis.core.WhitespaceAnalyzer"/>
+                <text qname="name"/>
+                <text qname="p"/>
+            </lucene>
+            <range>
+                <create qname="name" type="xs:string"/>
+                <create qname="new-name" type="xs:string"/>
+                <create qname="remarks" type="xs:string"/>
+                <create qname="source-url" type="xs:string"/>
+                <create qname="volume-id" type="xs:string"/>
+                <create qname="flagged" type="xs:boolean"/>
+                <create qname="id" type="xs:double"/>
+                <create qname="gender" type="xs:string"/>
+                <create qname="birth-year" type="xs:integer"/>
+                <create qname="death-year" type="xs:integer"/>
+                <create qname="authority" type="xs:string"/>
+                <create qname="@service" type="xs:string"/>
+            </range>
+        </index>
+    </app>
+    <app>
+        <name>pocom</name>
+        <url>http://history.state.gov/ns/data/pocom</url>
+        <title>Principal Officers &amp; Chiefs of Mission (data)</title>
+        <version>0.5</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <!-- Disable the standard full text index -->
+            <fulltext default="none" attributes="false"/>            
+            <!-- Lucene index configuration -->
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="persName"/>
+            </lucene>            
+            <!-- Range index configuration -->
+            <range>
+                <create qname="category" type="xs:string"/>
+                <create qname="class" type="xs:string"/>
+                <create qname="date" type="xs:date"/>
+                <create qname="id" type="xs:string"/>
+                <create qname="old-id" type="xs:string"/>
+                <create qname="person-id" type="xs:string"/>
+                <create qname="value" type="xs:string"/>
+                <create qname="@type" type="xs:string"/>
+                <create qname="@when" type="xs:string"/>
+            </range>
+        </index>
+    </app>
+    <app>
+        <name>rdcr</name>
+        <url>http://history.state.gov/ns/data/rdcr</url>
+        <title>Recognitions, Diplomatic, and Consular Relations (data)</title>
+        <version>0.4</version>
+        <index name="articles.xconf" 
+            xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            
+            <!-- Disable the legacy full text index -->
+            <fulltext default="none" attributes="false"/>
+            <!-- Lucene index configuration -->
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="tei:div"/>
+            </lucene>
+        </index>
+        <index name="issues.xconf" 
+            xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <!-- Disable the legacy full text index -->
+            <fulltext default="none" attributes="false"/>
+            <!-- Lucene index configuration -->
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="tei:div"/>
+            </lucene>
+        </index>
+    </app>
+    <app>
+        <name>release</name>
+        <url>http://history.state.gov/ns/apps/release</url>
+        <title>Release</title>
+        <version>0.5.0</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+            <lucene>
+                <!-- The standard analyzer will ignore stopwords like 'the', 'and' -->
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <analyzer id="ws" class="org.apache.lucene.analysis.core.WhitespaceAnalyzer"/>
+                <text qname="name"/>
+            </lucene>
+            <range>
+                <create qname="name" type="xs:string"/>
+            </range>
+        </index>
+    </app>
+    <app>
+        <name>tags</name>
+        <url>http://history.state.gov/ns/data/tags</url>
+        <title>Subject Taxonomy of the History of U.S. Foreign Relations (data)</title>
+        <version>0.6</version>    
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">       
+            <!-- Full text index configuration --><!-- Disable the standard full text index -->
+            <fulltext default="none" attributes="false"/><!-- Lucene index configuration --><!-- attribute boost can be used to give matches in the
+                collection a higher score. It can also be specified on a
+                single index definition. -->
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="label"/>
+            </lucene><!-- Range index configuration -->
+            <create qname="id" type="xs:string"/>
+            <create qname="@id" type="xs:string"/><!-- Note on @xml:id: When using the dedicated fn:id()
+                function, eXist will use its default xml:id index,
+                so you don't need an extra index. However, if you use
+                a general comparison as in //node[@xml:id = 'abc'], then
+                an additional range index will be required --><!--create qname="@when" type="xs:date"/--><!-- Note on @when: "eXist can only use a range index
+                if all values within that index are valid instances
+                of the defined index type. So every date has to be
+                an xs:date and if there's just one exception, the
+                index will no longer be used."  Until we've normalized
+                our dates, there's no point in using this range index. -->
+        </index>
+    </app>
+    <app>
+        <name>terms</name>
+        <url>http://history.state.gov/ns/apps/terms</url>
+        <title>Terms</title>
+        <version>0.4</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">                   
+            <fulltext default="none" attributes="false"/>
+            <lucene><!-- The standard analyzer will ignore stopwords like 'the', 'and' -->
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <analyzer id="ws" class="org.apache.lucene.analysis.core.WhitespaceAnalyzer"/>
+                <text qname="name"/>
+                <text qname="remark"/>
+            </lucene>
+            <range>
+                <create qname="name" type="xs:string"/>
+                <create qname="remark" type="xs:string"/>
+            </range>
+        </index>
+    </app>
+    <app>
+        <name>travels</name>
+        <url>http://history.state.gov/ns/data/travels</url>
+        <title>Travels (data)</title>
+        <version>0.4</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">                             
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="trip"/>
+                <text qname="name"/>
+                <text qname="role"/>
+                <text qname="country"/>
+                <text qname="locale"/>
+                <text qname="remarks"/>
+            </lucene>
+            <range>
+                <create match="//trip">
+                    <field name="trip-who" match="@who" type="xs:string"/>
+                </create>
+                <create qname="country" type="xs:string"/>
+                <create match="//president">
+                    <field name="president-id" match="id" type="xs:string"/>
+                </create>
+            </range>
+        </index> 
+    </app>
+    <app>
+        <name>visits</name>
+        <url>http://history.state.gov/ns/data/visits</url>
+        <title>Visits (data)</title>
+        <version>0.4</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">                             
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text match="//visits/*"/>
+            </lucene>
+            <range>
+                <create qname="id" type="xs:string"/>
+                <create qname="visitor" type="xs:string"/>
+                <create qname="from" type="xs:string"/>
+                <create qname="@id" type="xs:string"/>
+                <create qname="start-date" type="xs:date"/>
+                <create qname="end-date" type="xs:date"/>
+            </range>
+        </index>
+    </app>
+    <app>
+        <name>wwdai</name>
+        <url>http://history.state.gov/ns/data/wwdai</url>
+        <title>World Wide Diplomatic Archives Index (data)</title>
+        <version>0.4</version>
+        <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">                                         
+            <lucene>
+                <analyzer class="org.apache.lucene.analysis.standard.StandardAnalyzer"/>
+                <text qname="tei:div"/>
+            </lucene>
+        </index>        
+    </app>
+</root>
