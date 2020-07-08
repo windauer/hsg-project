@@ -40,8 +40,8 @@
         <echo message="Completed cloning of packages..."/>
     </target>
 
-    <target name="build" depends="prepare" description="Build all packages">
-        <!-- iterate-data-xars target="build-xar"/-->
+    <target name="build" depends="prepare,generate-xar-resources" description="Build all packages">
+        <iterate-data-xars target="build-xar"/>
         <iterate-app-xars target="build-xar"/>
     </target>
 
