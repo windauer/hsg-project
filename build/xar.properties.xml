@@ -242,7 +242,7 @@
     <app>
         <name>pocom</name>
         <url>http://history.state.gov/ns/data/pocom</url>
-        <title>Principal Officers &amp; Chiefs of Mission (data)</title>
+        <title>Principal Officers and Chiefs of Mission (data)</title>
         <version>0.5</version>
         <index xmlns="http://exist-db.org/collection-config/1.0" xmlns:tei="http://www.tei-c.org/ns/1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema">
             <!-- Disable the standard full text index -->

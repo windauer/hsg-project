@@ -27,9 +27,22 @@ declare function local:mkcol($collection, $path) {
     local:mkcol-recursive($collection, tokenize($path, "/"))
 };
 
-
-(: store the collection configuration :)
+(: create the collection configuration collection :)
 local:mkcol("/db/system/config", $target),
 
-(: store the replication configuration :)
-xmldb:store-files-from-pattern("/db/system/config" || $target,  $dir, "collection.xconf")
+(: store the collection configurations :)
+for $xconf in file:directory-list($dir, "*.xconf")/file:file/@name
+    let $data-dir := substring-before($xconf, ".xconf")
+    return 
+        if($xconf = "collection.xconf") 
+        then  (
+            xmldb:store-files-from-pattern("/db/system/config" || $target,  $dir, "collection.xconf")
+        ) 
+        else (
+            local:mkcol-recursive(concat("/db/system/config/", $target), $data-dir),
+            xmldb:store-files-from-pattern(
+                concat("/db/system/config", $target, "/", $data-dir),
+                $dir,
+                $xconf
+            )
+        )

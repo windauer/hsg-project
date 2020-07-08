@@ -60,15 +60,7 @@
         </xsl:copy>
     </xsl:template>
     
-    <!-- REPO.XML -->
-    <xsl:template match="repo:meta" mode="ant-repo-xml">
-        <xsl:copy>
-            <xsl:attribute name="commit-id" select="$git-commit-id"/>
-            <xsl:attribute name="commit-time" select="$git-commit-time"/>
-            <xsl:apply-templates select="@* | node()" mode="ant-repo-xml"/>
-        </xsl:copy>
-    </xsl:template>
-    
+    <!-- REPO.XML -->    
     <xsl:template match="repo:description" mode="ant-repo-xml">
         <xsl:copy>
             <xsl:value-of select="$xars//app[./name=$app-name]/title" />

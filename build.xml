@@ -5,6 +5,8 @@
     <property file="build/build.properties"/>
 
     <property name="repos" value="repos"/>
+    <property name="target.dir" value="target/xars"/>
+
     <property name="libs" value="lib"/>
     <property name="build" value="build"/>
 
@@ -28,23 +30,19 @@
     <condition property="remotes.include-private">
         <istrue value="${remotes.include-private}"/>
     </condition>
-
-    <target name="clone-private-repos" if="${remotes.include-private}" description="Clone private packages">
-        <echo message="Cloning private packages into ${repos}..."/>
-        <foreach-js property="remotes.private" target="git.clone"/>
-    </target>
-
+    
     <target name="clone-public-repos">
         <echo message="Cloning required packages into ${repos}..." description="Clone public packages"/>
         <foreach-js property="remotes" target="git.clone"/>
     </target>
 
-    <target name="setup" depends="prepare,mvn-copy-dependencies,upgrade-local-build-properties,clone-public-repos,clone-private-repos" description="Clone required packages">
+    <target name="setup" depends="prepare,mvn-copy-dependencies,upgrade-local-build-properties,clone-public-repos" description="Clone required packages">
         <echo message="Completed cloning of packages..."/>
     </target>
 
     <target name="build" depends="prepare" description="Build all packages">
-        <iterate target="build-xar"/>
+        <!-- iterate-data-xars target="build-xar"/-->
+        <iterate-app-xars target="build-xar"/>
     </target>
 
     <target name="deploy" description="Deploy all packages" depends="ping-localhost,ping-public-repo,deploy.init,deploy.upload,deploy.install-packages-from-public-repo,deploy.deploy,deploy.cleanup"/>
@@ -59,6 +57,8 @@
         <mkdir dir="${libs}"/>
         <mkdir dir="${xars}"/>
         <mkdir dir="${repos}"/>
+        <mkdir dir="${target.dir}"/>
+        
     </target>
 
     <target name="mvn-copy-dependencies" depends="prepare">
@@ -76,7 +76,7 @@
         <echo message="-------------------------------------"/>
         <echo message="Pulling updates for all repositories"/>
         <echo message="-------------------------------------"/>
-        <iterate target="git.pull"/>
+        <iterate-git target="git.pull"/>
     </target>
 
     <target name="update-one">
@@ -129,12 +129,12 @@
 
     <target name="deploy.upload-one" depends="deploy.get-xar-filename">
         <echo message="Uploading package ${repo-name} ..."/>
-        <xdb:store uri="${local.instance.temp}" user="${local.instance.user}" password="${local.instance.password}" createcollection="true" srcfile="${repos}/${repo-name}/${build}/${xar}"/>
+        <xdb:store uri="${local.instance.temp}" user="${local.instance.user}" password="${local.instance.password}" createcollection="true" srcfile="${target.dir}}/${repo-name}/${build}/${xar}"/>
     </target>
 
     <target name="deploy.upload-one-to-production" depends="deploy.get-xar-filename">
         <echo message="Uploading package ${repo-name} ..."/>
-        <xdb:store uri="${production.instance.temp}" user="${production.instance.user}" password="${production.instance.password}" createcollection="true" ssl="true" srcfile="${repos}/${repo-name}/${build}/${xar}"/>
+        <xdb:store uri="${production.instance.temp}" user="${production.instance.user}" password="${production.instance.password}" createcollection="true" ssl="true" srcfile="${target.dir}/${repo-name}/${build}/${xar}"/>
     </target>
 
     <target name="deploy.deploy">
@@ -217,7 +217,7 @@
 
     <target name="deploy.get-xar-filename" unless="xar">
         <path id="xar-path-ref">
-            <fileset dir="${repos}/${repo-name}/${build}">
+            <fileset dir="${target.dir}/${repo-name}/${build}">
                 <include name="*.xar"/>
             </fileset>
         </path>
@@ -278,7 +278,7 @@
         </delete>
         <subant target="clean" failonerror="false">
             <fileset dir=".">
-                <include name="${repos}/*/build.xml"/>
+                <include name="${target.dir}/*/build.xml"/>
             </fileset>
         </subant>
     </target>
@@ -286,6 +286,7 @@
     <target name="clean-all" depends="clean" description="Clean everything, including checked out repos, downloaded libs, and built xars">
         <delete dir="${libs}" failonerror="false"/>
         <delete dir="${repos}" failonerror="false"/>
+        <delete dir="${target.dir}" failonerror="false"/>
         <delete dir="${xars}" failonerror="false"/>
     </target>
 
@@ -324,7 +325,67 @@
     </target>
 
     <!-- Iterate through directory of repos and call target for each -->
-    <scriptdef name="iterate" language="javascript">
+    <scriptdef name="iterate-git" language="javascript">
+        <attribute name="target"/>
+        <![CDATA[
+            repos = project.getProperty("repos");
+
+            fs = project.createDataType("fileset");
+            fs.setDir(new java.io.File(repos));
+            fs.setIncludes("*/README.md");
+
+            ds = fs.getDirectoryScanner(project);
+            descriptors = ds.getIncludedFiles();
+
+            var basedir = fs.getDir(project);
+
+            for (i=0; i < descriptors.length; i++) {
+              var descriptor = new java.io.File(basedir, descriptors[i]);
+              var dir = descriptor.getParent();
+
+              // create and use a Task via Ant API
+              antc = project.createTask("antcall");
+              var prop = antc.createParam();
+              prop.setName("dir");
+              prop.setValue(dir);
+
+              antc.setTarget(attributes.get("target"));
+              antc.perform();
+            }
+        ]]>
+    </scriptdef>
+    <!-- Iterate through directory of data-xars annotated with eXist-db resources and call target for each -->
+    <scriptdef name="iterate-data-xars" language="javascript">
+        <attribute name="target"/>
+        <![CDATA[
+            repos = project.getProperty("target.dir");
+
+            fs = project.createDataType("fileset");
+            fs.setDir(new java.io.File(repos));
+            fs.setIncludes("*/build.xml");
+
+            ds = fs.getDirectoryScanner(project);
+            descriptors = ds.getIncludedFiles();
+
+            var basedir = fs.getDir(project);
+
+            for (i=0; i < descriptors.length; i++) {
+              var descriptor = new java.io.File(basedir, descriptors[i]);
+              var dir = descriptor.getParent();
+
+              // create and use a Task via Ant API
+              antc = project.createTask("antcall");
+              var prop = antc.createParam();
+              prop.setName("dir");
+              prop.setValue(dir);
+
+              antc.setTarget(attributes.get("target"));
+              antc.perform();
+            }
+        ]]>
+    </scriptdef>
+    <!-- Iterate through directory of data-xars annotated with eXist-db resources and call target for each -->
+    <scriptdef name="iterate-app-xars" language="javascript">
         <attribute name="target"/>
         <![CDATA[
             repos = project.getProperty("repos");
@@ -352,7 +413,7 @@
               antc.perform();
             }
         ]]>
-    </scriptdef>
+    </scriptdef>    
     
     <!-- Iterate through directory of xars and call target for each xar -->
     <scriptdef name="iterate-xars" language="javascript">
@@ -441,13 +502,13 @@
             <map from="c:" to=""/>
         </pathconvert>
         <condition property="is-hsg-project-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/"/>
+            <contains string="${file-path.unix}" substring="/hsg-project/${target.dir}/"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is not an hsg-project repo" unless="${is-hsg-project-repo}"/>
         <condition property="is-hsg-staging-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/hsg-staging"/>
+            <contains string="${file-path.unix}" substring="/hsg-project/${target.dir}/hsg-staging"/>
         </condition>
-        <propertyregex property="target-collection" input="${file-path.unix}" regexp=".*?/hsg-project/${repos}/(hsg-staging/)?(.*)" select="/db/apps/\2" defaultvalue="Error" override="true"/>
+        <propertyregex property="target-collection" input="${file-path.unix}" regexp=".*?/hsg-project/${target.dir}/(hsg-staging/)?(.*)" select="/db/apps/\2" defaultvalue="Error" override="true"/>
         <property name="target-xmldb-collection-uri" value="${local.instance.uri}${target-collection}"/>
         <xdb:store user="${local.instance.user}" password="${local.instance.password}" uri="${target-xmldb-collection-uri}" createcollection="true" createsubcollections="true">
             <fileset refid="file"/>
@@ -467,14 +528,14 @@
             <map from="c:" to=""/>
         </pathconvert>
         <condition property="is-hsg-project-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/"/>
+            <contains string="${file-path.unix}" substring="/hsg-project/${target.dir}/"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is not an hsg-project repo" unless="${is-hsg-project-repo}"/>
         <condition property="is-hsg-staging-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/hsg-staging"/>
+            <contains string="${file-path.unix}" substring="/hsg-project/${target.dir}/hsg-staging"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is part of the hsg-staging repo and cannot be uploaded to the production server" if="${is-hsg-staging-repo}"/>
-        <propertyregex property="target-collection" input="${file-path.unix}" regexp=".*?/hsg-project/${repos}/(.*)" select="/db/apps/\1" defaultvalue="Error" override="true"/>
+        <propertyregex property="target-collection" input="${file-path.unix}" regexp=".*?/hsg-project/${target.dir}/(.*)" select="/db/apps/\1" defaultvalue="Error" override="true"/>
         <property name="target-xmldb-collection-uri" value="${production.instance.uri}${target-collection}"/>
         <xdb:store user="${production.instance.user}" password="${production.instance.password}" uri="${target-xmldb-collection-uri}" ssl="true" createcollection="true" createsubcollections="true">
             <fileset refid="file"/>
@@ -494,10 +555,10 @@
             <map from="c:" to=""/>
         </pathconvert>
         <condition property="is-hsg-project-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/"/>
+            <contains string="${file-path.unix}" substring="/hsg-project/${target.dir}/"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is not an hsg-project repo" unless="${is-hsg-project-repo}"/>
-        <propertyregex property="target-collection" input="${file-path.unix}" regexp=".*?/hsg-project/${repos}/(hsg-staging/)?(.*)" select="/db/apps/\2" defaultvalue="Error" override="true"/>
+        <propertyregex property="target-collection" input="${file-path.unix}" regexp=".*?/hsg-project/${target.dir}/(hsg-staging/)?(.*)" select="/db/apps/\2" defaultvalue="Error" override="true"/>
         <property name="target-xmldb-collection-uri" value="${local.instance.uri}${target-collection}"/>
         <xdb:remove user="${local.instance.user}" password="${local.instance.password}" uri="${target-xmldb-collection-uri}" resource="${file-name}"/>
     </target>
@@ -515,11 +576,11 @@
             <map from="c:" to=""/>
         </pathconvert>
         <condition property="is-hsg-project-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/"/>
+            <contains string="${file-path.unix}" substring="/hsg-project/${target.dir}/"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is not an hsg-project repo" unless="${is-hsg-project-repo}"/>
         <condition property="is-hsg-staging-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/hsg-staging"/>
+            <contains string="${file-path.unix}" substring="/hsg-project/${target.dir}/hsg-staging"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is part of the hsg-staging repo and cannot be uploaded to the production server" if="${is-hsg-staging-repo}"/>
         <propertyregex property="target-collection" input="${file-path.unix}" regexp=".*?/hsg-project/repos/(.*)" select="/db/apps/\1" defaultvalue="Error" override="true"/>
@@ -567,20 +628,20 @@
             <map from="c:" to=""/>
         </pathconvert>
         <condition property="is-hsg-project-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/"/>
+            <contains string="${file-path.unix}" substring="/hsg-project/${target.dir}/"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is not an hsg-project repo" unless="${is-hsg-project-repo}"/>
         <condition property="is-hsg-staging-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/hsg-staging"/>
+            <contains string="${file-path.unix}" substring="/hsg-project/${target.dir}/hsg-staging"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is part of the hsg-staging repo and cannot be deployed" if="${is-hsg-staging-repo}"/>
-        <propertyregex property="repo-name" input="${file-path.unix}" regexp=".*/hsg-project/${repos}/([^/]+)" select="\1" defaultvalue="Error" override="true"/>
+        <propertyregex property="repo-name" input="${file-path.unix}" regexp=".*/hsg-project/${target.dir}/([^/]+)" select="\1" defaultvalue="Error" override="true"/>
         <echo>Validating well-formedness of XML files in ${repo-name}</echo>
         <xmlvalidate lenient="true">
-            <fileset dir="${repos}/${repo-name}" includes="**/**.xml,**/**.xconf" excludes="node_modules/**"/>
+            <fileset dir="${target.dir}/${repo-name}" includes="**/**.xml,**/**.xconf" excludes="node_modules/**"/>
         </xmlvalidate>
         <subant>
-            <fileset dir="${repos}/${repo-name}">
+            <fileset dir="${target.dir}/${repo-name}">
                 <include name="build.xml"/>
             </fileset>
         </subant>
@@ -597,22 +658,22 @@
             <map from="c:" to=""/>
         </pathconvert>
         <condition property="is-hsg-project-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/"/>
+            <contains string="${file-path.unix}" substring="/hsg-project/${target.dir}/"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is not an hsg-project repo" unless="${is-hsg-project-repo}"/>
         <condition property="is-hsg-staging-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/hsg-staging"/>
+            <contains string="${file-path.unix}" substring="/hsg-project/${target.dir}/hsg-staging"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is part of the hsg-staging repo and cannot be deployed" if="${is-hsg-staging-repo}"/>
-        <propertyregex property="repo-name" input="${file-path.unix}" regexp=".*/hsg-project/${repos}/([^/]+)" select="\1" defaultvalue="Error" override="true"/>
+        <propertyregex property="repo-name" input="${file-path.unix}" regexp=".*/hsg-project/${target.dir}/([^/]+)" select="\1" defaultvalue="Error" override="true"/>
         <echo>Validating well-formedness of XML files in ${repo-name}</echo>
         <xmlvalidate lenient="true">
-            <fileset dir="${repos}/${repo-name}" includes="**/**.xml,**/**.xconf" excludes="node_modules/**"/>
+            <fileset dir="${target.dir}/${repo-name}" includes="**/**.xml,**/**.xconf" excludes="node_modules/**"/>
         </xmlvalidate>
         <!-- for hsg-shell's npm start process, we need to set NODE_ENV to "production" and ensure this property is inherited by subant -->
         <property name="NODE_ENV" value="production"/>
         <subant inheritall="true">
-            <fileset dir="${repos}/${repo-name}">
+            <fileset dir="${target.dir}/${repo-name}">
                 <include name="build.xml"/>
             </fileset>
         </subant>
@@ -946,7 +1007,7 @@
     </target>
 
     <target name="repo-status">
-        <iterate target="git.rev-parse"/>
+        <iterate-git target="git.rev-parse"/>
     </target>
 
     <target name="git.rev-parse">
@@ -984,16 +1045,16 @@
 
     <target name="generate-xar-resource">
         <echo message="generate resources for: ${item}..."/>
-        <property name="target.dir" value="target/xars/${item}"/>
-        <mkdir dir="${target.dir}"/>
-        <copy todir="${target.dir}">
+        <property name="xar.target.dir" value="${target.dir}/${item}"/>
+        <mkdir dir="${xar.target.dir}"/>
+        <copy todir="${xar.target.dir}">
             <fileset dir="repos/${item}">
                 <exclude name="**/.idea/**"/>
             </fileset>
         </copy>
 
         <!-- BUILD.XML -->
-        <xslt in="templates/build.xml" style="${build}/generate-existdb-xar-resources.xsl" out="${target.dir}/build.xml" processor="trax" force="yes">
+        <xslt in="templates/build.xml" style="${build}/generate-existdb-xar-resources.xsl" out="${xar.target.dir}/build.xml" processor="trax" force="yes">
             <factory name="net.sf.saxon.TransformerFactoryImpl">
                 <attribute name="http://saxon.sf.net/feature/initialMode" value="ant-build-xml"/>
             </factory>
@@ -1006,7 +1067,7 @@
         </xslt>
 
         <!-- BUILD.PROPERTIES.XML -->
-        <xslt in="templates/build.properties.xml" style="${build}/generate-existdb-xar-resources.xsl" out="${target.dir}/build.properties.xml" processor="trax" force="yes">
+        <xslt in="templates/build.properties.xml" style="${build}/generate-existdb-xar-resources.xsl" out="${xar.target.dir}/build.properties.xml" processor="trax" force="yes">
             <factory name="net.sf.saxon.TransformerFactoryImpl">
                 <attribute name="http://saxon.sf.net/feature/initialMode" value="ant-build-properties"/>
             </factory>
@@ -1018,10 +1079,8 @@
             <param name="app-name" type="STRING" expression="${item}"/>
         </xslt>
 
-        <echo>Git commit id: ${git.revision}</echo>
-        <echo>Git commit time: ${git.time}</echo>
         <!-- REPO.XML -->
-        <xslt in="templates/repo.xml" style="${build}/generate-existdb-xar-resources.xsl" out="${target.dir}/repo.xml" processor="trax" force="yes">
+        <xslt in="templates/repo.xml.tmpl" style="${build}/generate-existdb-xar-resources.xsl" out="${xar.target.dir}/repo.xml.tmpl" processor="trax" force="yes">
             <factory name="net.sf.saxon.TransformerFactoryImpl">
                 <attribute name="http://saxon.sf.net/feature/initialMode" value="ant-repo-xml"/>
             </factory>
@@ -1031,9 +1090,6 @@
                 </fileset>
             </classpath>
             <param name="app-name" type="STRING" expression="${item}"/>
-            <param name="git-commit-id" type="STRING" expression="${git.revision}"/>
-            <param name="git-commit-time" type="STRING" expression="${git.time}"/>
-
         </xslt>
 
         <!-- COLLECTION.CONF Files -->
@@ -1047,48 +1103,16 @@
                 </fileset>
             </classpath>
             <param name="app-name" type="STRING" expression="${item}"/>
-            <param name="path" type="STRING" expression="${target.dir}"/>
+            <param name="path" type="STRING" expression="${xar.target.dir}"/>
         </xslt>
         <delete file="target/collection.xconf.tmpl"/>
         <!-- COPY RESOURCES -->
-        <copy file="templates/expath-pkg.xml.tmpl" tofile="${target.dir}/expath-pkg.xml.tmpl" force="yes"/>
-        <copy file="templates/pre-install.xql" tofile="${target.dir}/pre-install.xql" force="yes"/>
-        <ant antfile="build.xml" target="xar" dir="${target.dir}"/>
+        <copy file="templates/expath-pkg.xml.tmpl" tofile="${xar.target.dir}/expath-pkg.xml.tmpl" force="yes"/>
+        <copy file="templates/pre-install.xql" tofile="${xar.target.dir}/pre-install.xql" force="yes"/>
+        <ant antfile="build.xml" target="xar" dir="${xar.target.dir}"/>
     </target>
       
-    <target name="generate-xar-resources" depends="git.revision">
-        <foreach-js property="xars" target="generate-xar-resource"/>        
-    </target>
-
-    <available file=".git" type="dir" property="git.present"/>
-
-
-    <target name="git.revision" description="Store git revision in ${repository.version}" if="git.present">
-        <exec executable="git" outputproperty="git.revision" failifexecutionfails="false" errorproperty="">
-            <arg value="describe"/>
-            <arg value="--tags"/>
-            <arg value="--always"/>
-            <arg value="HEAD"/>
-        </exec>
-        <condition property="repository.version" value="${git.revision}" else="unknown">
-            <and>
-                <isset property="git.revision"/>
-                <length string="${git.revision}" trim="yes" length="0" when="greater"/>
-            </and>
-        </condition>
-        <echo>Git repo: ${repository.version}</echo>
-
-        <exec executable="git" outputproperty="git.time" failifexecutionfails="false" errorproperty="">
-            <arg value="show"/>
-            <arg value="-s"/>
-            <arg value="--format=%ct"/>
-            <arg value="${git.revision}"/>
-        </exec>
-        <echo>Git time: ${git.time}</echo>
-    </target>
-
-    <target name="lasse" description="lasse" depends="git.revision">
-        <echo>Git commit id: ${git.revision}</echo>
-        <echo>Git commit time: ${git.time}</echo>
-    </target>
+    <target name="generate-xar-resources">
+        <foreach-js property="data.xars" target="generate-xar-resource"/>        
+    </target>   
 </project>
