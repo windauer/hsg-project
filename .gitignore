@@ -10,6 +10,7 @@ Icon
 
 *.log
 .idea/*
+*.iml
 .DS_Store
 
 
