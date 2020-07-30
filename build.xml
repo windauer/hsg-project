@@ -390,6 +390,8 @@
         <echo message="Cloning ${item}..."/>
         <exec executable="${git}" outputproperty="git.output" dir="${repos}">
             <arg line="clone"/>
+            <arg line="-b"/>
+            <arg line="reorder-exist-artifacts"/>
             <arg line="--depth"/>
             <arg line="1"/>
             <arg line="${item}"/>
