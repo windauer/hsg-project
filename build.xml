@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project basedir="." name="HsgProject" default="all" 
+<project basedir="." name="HsgProject" default="all"
     xmlns:xdb="http://exist-db.org/ant">
     <property file="${basedir}/build/local.build.properties"/>
     <property file="${basedir}/build/build.properties"/>
@@ -26,7 +26,7 @@
     <property name="development.instance.temp" value="${development.instance.uri}${instance.tempPath}"/>
 
     <target name="all" depends="ping-localhost,ping-public-repo,clean,update,build,deploy" description="Clean, update, build, and deploy all packages (assumes 'setup' has already been run)"/>
-    
+
     <target name="clone-public-repos">
         <echo message="Cloning required packages into ${repos}..." description="Clone public packages"/>
         <foreach-js property="remotes" target="git.clone"/>
@@ -46,12 +46,12 @@
 
     <target name="deploy-one" description="Deploy one package" depends="ping-localhost,ping-public-repo,deploy.init">
         <property name="dir" value="${target.dir}/${repo-name}"/>
-        
+
         <antcall target="build-xar"/>
         <antcall target="deploy.upload-one"/>
         <antcall target="deploy.deploy-xar"/>
         <antcall target="deploy.cleanup"/>
-        
+
     </target>
 
     <target name="prepare">
@@ -59,7 +59,7 @@
         <mkdir dir="${xars}"/>
         <mkdir dir="${repos}"/>
         <mkdir dir="${target.dir}"/>
-        
+
     </target>
 
     <target name="mvn-copy-dependencies" depends="prepare">
@@ -100,20 +100,20 @@
             <classpath refid="exist.classpath"/>
         </typedef>
     </target>
-    
-    <target name="deploy.copy-one" >
+
+    <target name="deploy.copy-one">
         <property name="xar.target.dir" value="${target.dir}/${repo-name}"/>
         <echo message="copying src files '${directory}' to target dir '${xar.target.dir}'"/>
-        
+
         <copy todir="${xar.target.dir}">
             <fileset dir="${directory}">
                 <exclude name="**/.idea/**"/>
-                <exclude name="**/.git/**"/>                
+                <exclude name="**/.git/**"/>
             </fileset>
         </copy>
-        
+
     </target>
-    
+
     <target name="deploy.upload">
         <echo message="Uploading packages ..."/>
         <xdb:store uri="${local.instance.temp}" user="${local.instance.user}" password="${local.instance.password}" createcollection="true">
@@ -127,11 +127,7 @@
         <echo message="Uploading package ${repo-name} ..."/>
         <echo>local.instance.temp: ${local.instance.temp}</echo>
         <echo>xar file: '${target.dir}/${repo-name}/${build}/${xar}'</echo>
-        <xdb:store uri="${local.instance.temp}" 
-            user="${local.instance.user}" 
-            password="${local.instance.password}" 
-            createcollection="true" 
-            srcfile="${target.dir}/${repo-name}/${build}/${xar}" />
+        <xdb:store uri="${local.instance.temp}" user="${local.instance.user}" password="${local.instance.password}" createcollection="true" srcfile="${target.dir}/${repo-name}/${build}/${xar}" />
     </target>
 
     <target name="deploy.deploy">
@@ -161,7 +157,7 @@
     </target>
 
     <target name="deploy.get-xar-filename" unless="xar">
-        
+
         <echo>target.dir: ${target.dir}</echo>
         <echo>repo-name: ${repo-name}</echo>
         <echo>build: ${build}</echo>
@@ -180,7 +176,7 @@
         <echo>local.instance.temp: ${local.instance.temp}</echo>
         <echo>instance.tempPath: ${instance.tempPath}</echo>
         <echo>eXist.public-repo.lookup: ${eXist.public-repo.lookup}</echo>
-        
+
         <xdb:xquery uri="${local.instance.temp}" user="${local.instance.user}" password="${local.instance.password}" queryFile="${build}/deploy.xql" outputproperty="deploy.output">
             <variable name="temp" value="${instance.tempPath}"/>
             <variable name="xar" value="${xar}"/>
@@ -337,8 +333,8 @@
               antc.perform();
             }
         ]]>
-    </scriptdef>    
-    
+    </scriptdef>
+
     <!-- Iterate through directory of xars and call target for each xar -->
     <scriptdef name="iterate-xars" language="javascript">
         <attribute name="target"/>
@@ -437,7 +433,7 @@
             <fileset refid="file"/>
         </xdb:store>
     </target>
-  
+
     <target name="delete-file-from-localhost" description="Delete a file from an hsg-project repo from eXist-db on localhost" depends="deploy.init">
         <property name="directory" value="${directory}"/>
         <property name="file-name" value="${file-name}"/>
@@ -454,15 +450,15 @@
             <contains string="${file-path.unix}" substring="${repos}/"/>
         </condition>
         <fail message="ERROR: The directory ${file-path} is not an hsg-project repo" unless="${is-hsg-project-repo}"/>
-        
+
         <!-- propertyregex property="target-collection" input="${file-path.unix}" regexp="${repos}/(.*)" select="/db/apps/\2" defaultvalue="Error" override="true"/-->
         <propertyregex property="target-collection" input="${file-path.unix}" regexp="${repos}/(.*)" select="/db/apps/\2" defaultvalue="Error" override="true"/>
-        
+
         <echo>target-collection: ${target-collection}</echo>
         <property name="target-xmldb-collection-uri" value="${local.instance.uri}${target-collection}"/>
         <xdb:remove user="${local.instance.user}" password="${local.instance.password}" uri="${target-xmldb-collection-uri}" resource="${file-name}"/>
     </target>
-  
+
 
     <target name="update-repo" description="Pull updates for the parent repo of a file (from an hsg-project repo)" depends="deploy.init">
         <property name="directory" value="${directory}"/>
@@ -497,9 +493,9 @@
     </target>
 
     <target name="deploy-repo-to-localhost" description="Packages and deploys the parent repo of a file (from an hsg-project repo) to eXist-db on localhost" depends="deploy.init">
-        <echo>directory ${directory}</echo>        
+        <echo>directory ${directory}</echo>
         <echo>target.dir ${target.dir}</echo>
-        <echo>repos: ${repos}</echo>        
+        <echo>repos: ${repos}</echo>
         <echo>file-path.unix: ${file-path.unix}</echo>
 
         <path id="parent-dir">
@@ -508,15 +504,15 @@
         <pathconvert targetos="unix" property="file-path.unix" refid="parent-dir">
             <map from="c:" to=""/>
         </pathconvert>
-        
+
 
         <condition property="is-hsg-project-repo">
             <contains string="${file-path.unix}" substring="${repos}/"/>
         </condition>
 
-        
+
         <fail message="ERROR: The directory ${directory} is not an hsg-project repo" unless="${is-hsg-project-repo}"/>
-        
+
         <propertyregex property="repo-name" input="${file-path.unix}" regexp="${repos}/([^/]+)" select="\1" defaultvalue="Error" override="true"/>
         <echo>repo-name ${repo-name}</echo>
         <echo>Validating well-formedness of XML files in ${repo-name}</echo>
@@ -532,7 +528,7 @@
         <antcall target="deploy.upload-one"/>
         <antcall target="deploy.deploy-xar"/>
         <antcall target="deploy.cleanup"/>
-    </target>   
+    </target>
 
     <target name="open-repo-in-github-desktop" description="Opens an hsg-project repo in oXygen XML Editor" depends="deploy.init">
         <property name="directory" value="${directory}"/>
@@ -651,10 +647,10 @@
             <entry key="eXist.home" value="${eXist.home}"/>
             <entry key="git" value="${git}"/>
             <entry key="github" value="${github}"/>
-            <entry key="local.instance.password" value="${local.instance.password}"/>            
+            <entry key="local.instance.password" value="${local.instance.password}"/>
         </propertyfile>
     </target>
-    
+
     <target name="configure-for-exist-on-mac-system" description="Configure hsg-project for use with eXist on a Mac system" depends="check-local-build-properties">
         <echo>user-home: ${user-home}</echo>
         <echo>eXist.data: ${user-home}${eXist.data.mac-dmg-installer}</echo>
@@ -667,7 +663,7 @@
     </target>
 
     <target name="apply-hsg-project-customizations-to-exist" description="Apply hsg-project customizations to eXist" depends="upgrade-local-build-properties,prepare-exist-configuration"/>
-    
+
     <target name="prepare-exist-configuration" depends="back-up-exist-configuration-file">
         <echo message="-------------------------------------------------------"/>
         <echo message="Applying hsg customizations to eXist configuration file"/>
@@ -856,7 +852,7 @@
             <arg line="-h"/>
         </exec>
     </target>
-    
+
     <target name="generate-xar-resource">
         <echo message="generate resources for: ${item}..."/>
         <property name="xar.target.dir" value="${target.dir}/${item}"/>
@@ -925,8 +921,8 @@
         <copy file="templates/pre-install.xql" tofile="${xar.target.dir}/pre-install.xql" force="yes"/>
         <!-- ant antfile="build.xml" target="xar" dir="${xar.target.dir}"/-->
     </target>
-      
+
     <target name="generate-xar-resources">
-        <foreach-js property="data.xars" target="generate-xar-resource"/>        
-    </target>   
+        <foreach-js property="data.xars" target="generate-xar-resource"/>
+    </target>
 </project>
