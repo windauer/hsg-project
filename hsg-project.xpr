@@ -310,6 +310,70 @@
                                     <Boolean>true</Boolean>
                                 </field>
                             </xsltCustomEngines>
+<xsltCustomEngines>
+                                <field name="outEncoding">
+                                    <null/>
+                                </field>
+                                <field name="outContentType">
+                                    <String>text/plain</String>
+                                </field>
+                                <field name="errEncoding">
+                                    <null/>
+                                </field>
+                                <field name="cmd">
+                                    <String>echo "Sorry this isn't a command!"</String>
+                                </field>
+                                <field name="description">
+                                    <String>(Divider)</String>
+                                </field>
+                                <field name="name">
+                                    <String>= Publish to history.state.gov =</String>
+                                </field>
+                                <field name="workingDirectory">
+                                    <String>.</String>
+                                </field>
+                                <field name="keyStroke">
+                                    <null/>
+                                </field>
+                                <field name="isBuiltin">
+                                    <Boolean>false</Boolean>
+                                </field>
+                                <field name="showConsole">
+                                    <Boolean>true</Boolean>
+                                </field>
+                            </xsltCustomEngines>
+                            <xsltCustomEngines>
+                                <field name="outEncoding">
+                                    <null/>
+                                </field>
+                                <field name="outContentType">
+                                    <String>text/plain</String>
+                                </field>
+                                <field name="errEncoding">
+                                    <null/>
+                                </field>
+                                <field name="cmd">
+                                    <String>java -Dlog4j.configurationFile="${pd}/build/log4j2.xml" -jar "${oxygenInstallDir}/tools/ant/lib/ant-launcher.jar" delete-file-from-production -Ddirectory="${cfd}" -Dfile-name="${cfne}"</String>
+                                </field>
+                                <field name="description">
+                                    <String>Delete the working file in the active tab from eXist-db on history.state.gov</String>
+                                </field>
+                                <field name="name">
+                                    <String>Delete current file from history.state.gov</String>
+                                </field>
+                                <field name="workingDirectory">
+                                    <String>${pd}</String>
+                                </field>
+                                <field name="keyStroke">
+                                    <null/>
+                                </field>
+                                <field name="isBuiltin">
+                                    <Boolean>false</Boolean>
+                                </field>
+                                <field name="showConsole">
+                                    <Boolean>true</Boolean>
+                                </field>
+                            </xsltCustomEngines>                            
                             <xsltCustomEngines>
                                 <field name="outEncoding">
                                     <null/>
