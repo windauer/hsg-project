@@ -447,15 +447,17 @@
             <map from="c:" to=""/>
         </pathconvert>
         <condition property="is-hsg-project-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/"/>
+            <contains string="${file-path.unix}" substring="${repos}/"/>
         </condition>
+        <echo message="uploading: /hsg-project/${repos}"/>
         <fail message="ERROR: The directory ${directory} is not an hsg-project repo" unless="${is-hsg-project-repo}"/>
         <condition property="is-hsg-staging-repo">
             <contains string="${file-path.unix}" substring="/hsg-project/${repos}/hsg-staging"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is part of the hsg-staging repo and cannot be uploaded to the production server" if="${is-hsg-staging-repo}"/>
-        <propertyregex property="target-collection" input="${file-path.unix}" regexp=".*?/hsg-project/${repos}/(.*)" select="/db/apps/\1" defaultvalue="Error" override="true"/>
+        <propertyregex property="target-collection" input="${file-path.unix}" regexp="${repos}/(.*)" select="/db/apps/\1" defaultvalue="Error" override="true"/>        
         <property name="target-xmldb-collection-uri" value="${production.instance.uri}${target-collection}"/>
+        <echo message="target-xmldb-collection-uri: ${target-xmldb-collection-uri}"/>
         <xdb:store user="${production.instance.user}" password="${production.instance.password}" uri="${target-xmldb-collection-uri}" ssl="true" createcollection="true" createsubcollections="true">
             <fileset refid="file"/>
         </xdb:store>
@@ -499,7 +501,7 @@
             <map from="c:" to=""/>
         </pathconvert>
         <condition property="is-hsg-project-repo">
-            <contains string="${file-path.unix}" substring="/hsg-project/${repos}/"/>
+            <contains string="${file-path.unix}" substring="${repos}/"/>
         </condition>
         <fail message="ERROR: The directory ${directory} is not an hsg-project repo" unless="${is-hsg-project-repo}"/>
         <condition property="is-hsg-staging-repo">
