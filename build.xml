@@ -13,7 +13,7 @@
     <property name="build-env" value=""/>
 
     <property name="eXist.home.mac-dmg-installer" value="/Applications/eXist-db.app"/>
-    <property name="eXist.data.mac-dmg-installer" value="/Library/Application Support/org.exist.5.1.1"/>
+    <property name="eXist.data.mac-dmg-installer" value="/Library/ApplicationSupport/org.exist"/>
 
     <!-- use "xars" unless called with a "repo-name" property -->
     <condition property="xars" value="${repo-name}" else="xars">
@@ -630,6 +630,13 @@
             <http requestmethod="HEAD" url="http://localhost:8080/exist/status"/>
         </condition>
         <fail unless="${exist-running}" message="eXist is not running. Please start eXist and try again."/>
+    </target>
+
+    <target name="ping-production">
+        <condition property="exist-running">
+            <http requestmethod="GET" url="${production.instance.http}/test" />
+        </condition>
+        <fail unless="${exist-running}" message="The production server cannot be reached. Please confirm you are connected to the internet and try again."/>
     </target>
 
     <target name="ping-public-repo">
