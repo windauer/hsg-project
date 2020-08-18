@@ -101,6 +101,17 @@
         </typedef>
     </target>
 
+    <target name="deploy.fix-index" depends="ping-localhost,deploy.init">
+        <xdb:store uri="xmldb:exist://localhost:8080/exist/xmlrpc/db/system/config/db/" user="${local.instance.user}" password="${local.instance.password}" createcollection="true">
+            <fileset dir="templates">
+                <include name="collection.xconf"/>
+            </fileset>
+        </xdb:store>
+        
+        <xdb:xquery uri="${local.instance.temp}" user="${local.instance.user}" password="${local.instance.password}" queryFile="${build}/reindex.xql" outputproperty="deploy.output"/>
+
+    </target>
+
     <target name="deploy.copy-one">
         <property name="xar.target.dir" value="${target.dir}/${repo-name}"/>
         <echo message="copying src files '${directory}' to target dir '${xar.target.dir}'"/>
