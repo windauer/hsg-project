@@ -10,8 +10,6 @@
     <property name="libs" value="${basedir}/lib"/>
     <property name="build" value="build"/>
 
-    <property name="build-env" value=""/>
-
     <property name="eXist.home.mac-dmg-installer" value="/Applications/eXist-db.app"/>
     <property name="eXist.data.mac-dmg-installer" value="/Library/ApplicationSupport/org.exist"/>
 
@@ -26,6 +24,8 @@
     <property name="development.instance.temp" value="${development.instance.uri}${instance.tempPath}"/>
 
     <target name="all" depends="ping-localhost,ping-public-repo,clean,update,build,deploy" description="Clean, update, build, and deploy all packages (assumes 'setup' has already been run)"/>
+    
+    <target name="build-all" depends="ping-localhost,ping-public-repo,clean,update,build" description="Clean, update and build all package, no deploy" />
 
     <target name="clone-public-repos">
         <echo message="Cloning required packages into ${repos}..." description="Clone public packages"/>
@@ -228,7 +228,7 @@
         <xmlvalidate lenient="true">
             <fileset dir="${dir}" includes="**/**.xml,**/**.xconf" excludes="node_modules/**"/>
         </xmlvalidate>
-        <subant target="xar${build-env}">
+        <subant target="xar">
             <fileset dir="${dir}">
                 <include name="build.xml"/>
             </fileset>
