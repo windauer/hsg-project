@@ -34,7 +34,7 @@
 
     <target name="setup" depends="prepare,mvn-copy-dependencies,upgrade-local-build-properties,clone-public-repos" description="Clone required packages">
         <echo message="Completed cloning of packages..."/>
-        <antcall target="generate-xar-resources"/>
+        <!-- antcall target="generate-xar-resources"/-->
     </target>
 
     <target name="build" depends="prepare,generate-xar-resources" description="Build all packages">
