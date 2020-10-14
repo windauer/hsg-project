@@ -25,7 +25,7 @@
 
     <target name="all" depends="ping-localhost,ping-public-repo,clean,update,build,deploy" description="Clean, update, build, and deploy all packages (assumes 'setup' has already been run)"/>
     
-    <target name="build-all" depends="ping-localhost,ping-public-repo,clean,update,build" description="Clean, update and build all package, no deploy" />
+    <target name="build-all" depends="ping-public-repo,clean,update,build" description="Clean, update and build all package, no deploy" />
 
     <target name="clone-public-repos">
         <echo message="Cloning required packages into ${repos}..." description="Clone public packages"/>
